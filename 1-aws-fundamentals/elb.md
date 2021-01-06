@@ -1,16 +1,24 @@
 # ELB: Elastic Load Balancers
 
+## High Availability and Scalability:
+*   Vertical Scaling - Increase instance size (Scale up/Down)
+*   Horizontal Scaling - Increase the number of instances (= scale in/out)
+*   High Availability - Run instances for the same application across multi AZ
+
+
 Load balancers are servers that forward internet traffic to multiple servers (EC2 Instances) downstream
 
 #### Why use a load balancer?
-* Spread load across multiple downstream instances
-* Expose a single point of access (DNS) to your application
-* Seamlessly handle failures of downstream instances
-* Do regular health checks to your instances
-* Provide SSL termination (HTTPS) for your websites
-* Enforce stickiness with cookies
-* High availability across zones
-* Separate public traffic from private traffic
+*   Spread load across multiple downstream instances
+*   Expose a single point of access (DNS) to your application
+*   Seamlessly handle failures of downstream instances
+*   Do regular health checks to your instances (\health)
+*   Provide SSL termination (HTTPS) for your websites
+*   Enforce stickiness with cookies
+*   High availability across zones
+*   Separate public traffic from private traffic
+*   You can have **Internal** (used to handle internal/private traffic) and **External** (connects to the public web) ELBs
+*   The security Group of EC2 instances should only accept data from the ELB. Source for EC2 instances would be the Security Group of the ELB.
 
 #### AN ELB (EC2 Load Balancer) is a managed load balancer
 * AWS guarantees that it will be working
@@ -20,10 +28,11 @@ Load balancers are servers that forward internet traffic to multiple servers (EC
 It costs less to setup your own load balancer but it will be a lot more effort on your end. It is integrated with many AWS offerings / services
 
 #### Types of load balancers on AWS
-* Classic Load Balancer (v1 - older generation - 2009)
+* Classic Load Balancer (v1 - older generation - 2009) -
 * Application Load Balancer (v2 - new generation - 2016)
 * Network Load Balancer (v2 - new generation - 2017)
 * You can setup internal or external ELBs
+* Interval > Response Time out
 
 #### Health Checks
 * Health checks are crucial for load balancers
@@ -37,6 +46,7 @@ It costs less to setup your own load balancer but it will be a lot more effort o
   * Load balancing to multiple applications on the same machine (ex: containers)
   * Load balancing based on route in URL
   * Load balancing based on hostname in URL 
+  * Load balancing based on Query Strings and headers
 * Basically, they’re awesome for micro services & container-based application (example: Docker & Amazon ECS) 
 * Has a port mapping feature to redirect to a dynamic port 
 * In comparison, we would need to create one Classic Load Balancer per application before.That was very expensive and inefficient!
@@ -48,12 +58,20 @@ It costs less to setup your own load balancer but it will be a lot more effort o
     * The application servers don’t see the IP of the client directly
         * The true IP of the client is inserted in the header X-Forwarded-For
         * We can also get Port (X-Forwarded-Port) and protocol (X-Forwarded-Proto)
+
+*   Newer version v2, 2016,  are used for load balancing of HTTP, websocket and HTTPS traffic. They operate at Layer 7 only and are application-aware. You can create advanced request routing, sending specific request to specific web servers. 
+*   1 ALB can route on multiple paths in URLs (example.com/users & example.com/posts)
+*   1 ALB can route on multiple hostnames in URL (one.example.com  others.example.com)
+*   1 ALB infront of many Target Groups (EC2 instances, EC2 tasks, Lambda functions (serverless) etc.)
+*   The Load balancer, performs a Connection Termination with the Client before communicating with EC2 instances. SO if the Ec2 instances want know the Client IP you need to look into the X-Forwarded-For header in the packet. Protocol -> X-forwarded-Proto. Port -> X-forwarded-Port
+*   ALB also gets a fixed hostname.
 #### Network Load Balancer (v2)
 * Layer 4 allow you to do:
-    * Forward TCP traffic to your instances
+    * Forward TCP/UDP traffic to your instances
     * Handle millions of requests per second
     * Support for static IP or elastic IP
-    * Less latency ~100ms (vs 400 ms for ALB)
+    * Less latency ~100ms (vs 400 ms for ALB). LOT LESS THAN ALB. USed for extreme performance.
+    * NLB expose one static IP per AZ (not hostname), and support assigning Elastic IP. Helpful when you want to whitelist specific IP. 
 * Network Load Balancers are mostly used for extreme performance and should not be the default load balancer you choose
 * Overall, the creation process is the same as the Application Load Balancer
 
@@ -65,3 +83,40 @@ It costs less to setup your own load balancer but it will be a lot more effort o
 * 5xx errors are application induced errors
     * Load balancer Errors 503 means at capacity or no registered target
 * If the LB can’t connect to your application, check your security
+
+#### Stickiness
+*   Same client will be directed to the same instance behind the load balancer.
+*   Works for CLB and ALB
+*   Cookies are used to stickiness. You have an expiration date on them. As long as, cookie not expired then, redirected to same EC2 instance
+*   Enabling stickiness might bring imbalance to the EC2 instances.
+*   You can enable sticky sessions for Application LB as well, but the traffic will be sent to target groups.
+
+#### Cross Zone Load Balancing
+
+*   By default, load balancer can’t send traffic across AZs. However, you could enable cross zone load balancing to solve that problem.
+*   CLB- disabled by default. No charges if you switch on.
+*   ALB - always ON.
+*   CLB - disabled by default. Charged if you switch on.
+
+#### SNI and Load Balancers
+*   SSL - Secured Sockets layer. 
+*   TLS - Transport Layer Security - the newer version of SSL
+*   SSL certificates are issued by Certificates Authorities (CA). Go Daddy, Symantec etc. This certificate on the LB is used to encrypt the connection between the clients and LB.
+*   SSL certificates have expiration date.
+*   ACM - AWS certificate Manager
+*   SNI - server name indication. Solves how do you load multiple ssl certificates onto one web server for it to access multiple websites?
+*   SNI works on ALB, NLB and CloudFront
+*   CLB - supports one 1 SSL certificate. Use multiple CLBs for it to support multiple SSL certificates
+*   ALB, NLB -> supports multiple listeners with multiple SSL certificates, uses SNI to make it happen.
+
+#### ELB Connection Draining
+*   2 different names - CLB - Connection Draining. Target Group (ALB and NLB) - Deregistration Delay
+*   Time to complete "in-flight requests" while the instance is de-registering or unhealthy.
+*   ELB will stop sending new requests to the unhealthy instances and will communicate with the healthy ones.
+*   Default is 300secs. can be set between 0 to 3600 secs
+*   If 0, the requests are terminated with a error msg to the client
+*   Low value if the requests are short.
+
+
+
+
