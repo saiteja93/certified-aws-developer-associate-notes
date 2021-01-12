@@ -3,17 +3,18 @@
 * An EC2 machine loses its root volume (main drive) when it is manually terminated.
 * Unexpected terminations might happen from time to time (AWS would email you)
 * Sometimes, you need a way to store your instance data somewhere
-* An EBS (Elastic Block Store) Volume is a network drive you can attach to your instances while they run
+* An EBS (Elastic Block Store) Volume is a **network drive** you can attach to your instances while they run
 * It allows your instances to persist data
+* IOPS - I/O ops per second
 
 #### EBS Volume
 * It’s a network drive (Not a physical drive)
-    * It uses the network to communicate the instance, which means there might be a bit of latency
+    * It uses the network to communicate the instance, which means there might be a bit of **latency**
     * It can be detached from an EC2 instance and attached to another one quickly
 * It’s locked to an Availability Zone (AZ)
     * An EBS Volume in us-east-1a cannot be attached to us-east-1b
     * To move a volume across, you first need to snapshot it
-* Have a provisioned capacity (size in GBs and IOPs)
+* Have a provisioned capacity (size in GBs and IOPs) 
     * You get billed for all the provisioned capacity
     * You can increase the capacity of the drive over time
 
@@ -34,21 +35,32 @@
 - Virtual desktops
 - Low-latency interactive apps
 - Development and test environments
+- size can be from 1GB - 16TB
+- Small GP2 volumes can burst IOPS upto 3000. 
+- 3 IOPS per GB is the rule and a minimum of 100 IOPs
 
 2. IO1
 - Critical business applications that require sustained IOPS performance, or more than 16,000 IOPS per volume (gp2 limit)
--  Large database workloads, such as: MongoDB, Cassandra, Microsoft SQL Server, MySQL, PostgreSQL, Oracle
+- Large database workloads, such as: MongoDB, Cassandra, Microsoft SQL Server, MySQL, PostgreSQL, Oracle
+- 4Gb - 16TB size range
+- IOPs is provisioned. PIOPs. MIN 100 - MAX 64000 (for specific, Nitro instances ) - else MAX 32000 (for other instances)
+- Maximum ratio of PIOPs to requested volume size is 50:1
 
-3. ST1
+
+3. ST1 - Throughput Optimized HDD
 - Streaming workloads requiring consistent, fast throughput at a low price. 
 - Big data, Data warehouses, Log processing
 - Apache Kafka
- - Cannot be a boot volume
+- Cannot be a boot volume
+- 500Gb to 16Tb size
+- Max IOPs is 500
+- Can burst 
  
 4. SC1
-- Throughput-oriented storage for large volumes of data that is infrequently accessed
+- Throughput-oriented storage for large volumes of data that is **infrequently accessed**
 - Scenarios where the lowest storage cost is important
 - Cannot be a boot volume
+- Can burst. Cheaper than ST1
 
 #### EBS Volume Types Summary
 - gp2: General Purpose Volumes (cheap)
