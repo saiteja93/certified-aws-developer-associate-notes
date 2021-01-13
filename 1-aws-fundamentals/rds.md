@@ -72,6 +72,7 @@ RDS Encryption
 	* TO connect using SSL:
 		* Provide the SSL Trust certificate (can be downloaded from AWS)
 		* Provide SSL options when connection to the database
+* TDE on top of KMS is only available in RDS on MY SQL server
 	
 	
 RDS Encryption Operations
@@ -158,7 +159,7 @@ Global Aurora
 	- Useful for disaster recovery
 	- Simple to put in place
 - Aurora Global Database (recommended):
-	- 1 Primary Region (read / write)
+	- 1 Primary Region (read / write). Cross region replication
 	- Up to 5 secondary (read-only) regions, replication lag is less than 1 second. Done through Async replication. 
 	- Up to 16 Read Replicas per secondary region
 	- Helps for decreasing latency
@@ -218,7 +219,7 @@ Caching Implementation
 			
 	- Write Through – Write Optimization. Add or Update cache when database is updated
 		- Pros:
-			- Data in cache is never stale, reads are quick
+			- Data in cache is never stale. Write has a penalty, but the reads are quick
 			- Write penalty vs Read penalty (each write requires 2 calls)
 		- Cons:
 			- Missing Data until it is added / updated in the DB. Mitigation is to implement Lazy Loading strategy as well
